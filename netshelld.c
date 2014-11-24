@@ -25,7 +25,7 @@
 #define ADDR 12 	/* Length of an IPv4 address plus null */
 #define MAX 1024 	/* Largest message that can be recived */
 #define SHELL "/bin/sh" /* Program to use as shell */
-#define PORT "8888"	/* The port netshelld will listen on*/
+#define PORT "8888"	/* The port netshelld will listen on */
 
 #ifdef DEBUG
 #define DBG(string) printf(string)
@@ -59,7 +59,7 @@ int main (void) {
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_ADDRCONFIG;
 	struct addrinfo *ptr = &addr;
-	int gai = getaddrinfo("localhost","telnet",&hints,&ptr);
+	int gai = getaddrinfo("localhost",PORT,&hints,&ptr);
 	if (gai != 0) DBG(gai_strerror(gai));
 	/* borrow socket check from libsocket */
 	struct addrinfo *check;
