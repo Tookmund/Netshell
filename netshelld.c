@@ -1,14 +1,9 @@
 /*
  * A simple Telnet clone designed for easy remote access
- * Only supports IPv4 at them moment
+ * 
  *
  * By Jacob Adams <tookmund@gmail.com>
  */
-
-#define DEBUG /* Enable to print debug messages */
-#define ADDR 12 /* Length of an IPv4 address plus null */
-#define MAX 1024 /* Largest message that can be recived */
-#define SHELL "/bin/sh" /* Program to use as shell */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,10 +19,19 @@
 #include <netinet/in.h> /* For sockaddr_in */
 #include <limits.h>
 
+#define DEBUG 		/* Enable to print debug messages, can be enabled at 
+			 * compile time via -DDEBUG
+			 */
+#define ADDR 12 	/* Length of an IPv4 address plus null */
+#define MAX 1024 	/* Largest message that can be recived */
+#define SHELL "/bin/sh" /* Program to use as shell */
+#define PORT "8888"	/* The port netshelld will listen on*/
+
 #ifdef DEBUG
 #define DBG(string) printf(string)
 #endif
 
+/* Function run by child proccesses to network the shell */
 void child(int sfd) {
 	dup2(sfd,0);
 	dup2(sfd,1);
