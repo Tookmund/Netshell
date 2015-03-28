@@ -1,9 +1,10 @@
-FLAGS=-Wall -Werror
+FLAGS :=-Wall -Werror -g
+CC := gcc
 
 all: netshell netshelld
 
 netshell: netshell.c netsock.c
-	gcc $(FLAGS) netshell.c netsock.c -o netshell
+	$(CC) $(FLAGS) netshell.c netsock.c -o netshell
 
 netshelld: netshelld.c netsock.c
-	gcc $(FLAGS) netshelld.c netsock.c -o netshelld
+	$(CC) $(FLAGS) netshelld.c netsock.c -o netshelld
