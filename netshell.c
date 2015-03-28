@@ -2,7 +2,8 @@
  * A simple Telnet clone designed for easy remote access
  * By Jacob Adams <tookmund@gmail.com>
  */
-
+#include <sys/select.h>
+#include <unistd.h>
 #include "netsock.h"
 #define MAXBUF 1 /* Maximim buffer size for reads and writes */
 
@@ -12,16 +13,43 @@ int main (int argc, char* argv[]) {
 		int sfd = makesock(argv[1],argv[2],0);
 		char buf [MAXBUF+1];
 		memset(&buf,0,sizeof(buf));
-		int rb; /* number of bytes read */
-		/* int wb; number of bytes written */
-		for (;;) {
-			memset(&buf,0,sizeof(buf));
-			rb = 0;
-			/* wb = 0; */
-			rb = read(sfd, buf,MAXBUF);
-			if (rb > 0) write(1,buf,MAXBUF);
-			rb = read(0,buf,MAXBUF);
-			if (rb > 0) write(1,buf,MAXBUF);
+
+		fd_set masterinp;
+		FD_ZERO(&masterinp);
+		FD_SET(0,&masterinp);
+
+		fd_set masterout;
+		FD_ZERO(&masterout);
+		FD_SET(sfd,&masterout);
+
+		struct timeval timer;
+		memset(&timer,0,sizeof(timer));
+		int data = 0; // if there is data waiting to be written
+		int all = 0; // amount of data
+		while(1) {
+			fd_set inp = masterinp;
+			fd_set out = masterout;
+			int sel = select(sfd+1,&inp,&out,NULL,&timer);
+			if (sel < 0) {
+				perror("Select");
+			}
+			else {
+				if(FD_ISSET(0,&inp)) {
+					// input is available
+					if (!data) {
+						all = read(0,buf,sizeof(buf));
+						data = 1;
+					}
+				}
+				else if (FD_ISSET(sfd,&out)) {
+					if(data) {
+						int w = write(sfd,buf,sizeof(buf));
+						if(w == all) {
+							data = 0;
+						}
+					}
+				}
+			}
 		}
 	}
 	return 0;
