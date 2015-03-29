@@ -4,54 +4,67 @@
  */
 #include <sys/select.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include "netsock.h"
-#define MAXBUF 1 /* Maximim buffer size for reads and writes */
+#define MAXBUF 1025 /* Maximim buffer size for reads and writes */
 
 int main (int argc, char* argv[]) {
 	if (argc < 2) printf("Usage: %s host port\n",argv[0]);
 	else {
 		int sfd = makesock(argv[1],argv[2],0);
-		char buf [MAXBUF+1];
-		memset(&buf,0,sizeof(buf));
 
-		fd_set masterinp;
-		FD_ZERO(&masterinp);
-		FD_SET(0,&masterinp);
-		FD_SET(sfd,&masterinp);
-		
-		fd_set masterout;
-		FD_ZERO(&masterout);
-		FD_SET(0,&masterout);
-		FD_SET(sfd,&masterout);
+		fcntl(0,F_SETFL,O_NONBLOCK);
+		fcntl(1,F_SETFL,O_NONBLOCK);
+		fcntl(sfd,F_SETFL,O_NONBLOCK);
+
+		char stdinbuf[MAXBUF];
+		char sockbuf[MAXBUF];
+		memset(stdinbuf,0,sizeof(buf));
+		memset(sockbuf,0,sizeof(buf));
+
+		fd_set masterread;
+		FD_ZERO(&masterread);
+		FD_SET(0,&masterread);
+		FD_SET(sfd,&masterread);
+
+		fd_set masterwrite;
+		FD_ZERO(&masterwrite);
+		FD_SET(1,&masterwrite);
+		FD_SET(sfd,&masterwrite);
 
 		struct timeval timer;
 		memset(&timer,0,sizeof(timer));
-		int data = 0; // if there is data waiting to be written
-		int all = 0; // amount of data
+
+		char sockdata = 0; // if there is data waiting to be written from the socket
+		int sockall = 0; // amount of data read from the socket
+		int socksome = 0; //amount of data written
+
+		char stdindata = 0; // if there is data waiting to be written from stdin
+		int stdinall = 0; // amount of data read from stdin
+		int stdinsome = 0;
+
+		fd_set readfrom;
+		fd_set writeto;
 		while(1) {
 			printf("Loop\n");
-			fd_set inp = masterinp;
-			fd_set out = masterout;
-			int sel = select(sfd+1,&inp,&out,NULL,&timer);
+			readfrom = masterread;
+			writeto  = masterwrite;
+			int sel = select(sfd+1,&readfrom,&writeto,NULL,&timer);
 			if (sel < 0) {
 				perror("Select");
 			}
 			else {
-				if(FD_ISSET(0,&inp)) {
-					printf("input is available");
-					if (!data) {
-						all = read(0,buf,sizeof(buf));
-						printf("Read (%s)",buf);
-						data = 1;
-					}
+				if (FD_ISSET(0,&readfrom)) {
+					stdinsome = read(0,stdinbuf,sizeof(stdinbuf));
 				}
-				else if (FD_ISSET(sfd,&out)) {
-					if(data) {
-						int w = write(sfd,buf,sizeof(buf));
-						if(w == all) {
-							data = 0;
-						}
-					}
+				if (FD_ISSET(sfd,&readfrom)) {
+					
+				}
+				if (FD_ISSET(sfd,&writeto)) {
+					
+				}
+				if (FD_ISSET(1,&writeto)) {
+					
 				}
 			}
 		}
