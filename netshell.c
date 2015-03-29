@@ -19,8 +19,8 @@ int main (int argc, char* argv[]) {
 
 		char stdinbuf[MAXBUF];
 		char sockbuf[MAXBUF];
-		memset(stdinbuf,0,sizeof(buf));
-		memset(sockbuf,0,sizeof(buf));
+		memset(stdinbuf,0,sizeof(stdinbuf));
+		memset(sockbuf,0,sizeof(sockbuf));
 
 		fd_set masterread;
 		FD_ZERO(&masterread);
@@ -46,7 +46,7 @@ int main (int argc, char* argv[]) {
 		fd_set readfrom;
 		fd_set writeto;
 		while(1) {
-			printf("Loop\n");
+			fprintf(stderr,"stdinbuf: (%s)\nsockbuf: (%s)\n",stdinbuf,sockbuf);
 			readfrom = masterread;
 			writeto  = masterwrite;
 			int sel = select(sfd+1,&readfrom,&writeto,NULL,&timer);
@@ -55,16 +55,33 @@ int main (int argc, char* argv[]) {
 			}
 			else {
 				if (FD_ISSET(0,&readfrom)) {
-					stdinsome = read(0,stdinbuf,sizeof(stdinbuf));
+					if (!stdindata) {
+						stdinall = read(0,stdinbuf,sizeof(stdinbuf));
+						stdindata = 1;
+					}
 				}
 				if (FD_ISSET(sfd,&readfrom)) {
-					
+					if (!sockdata) {
+						sockall = read(sfd,sockbuf,sizeof(sockbuf));
+					}
 				}
 				if (FD_ISSET(sfd,&writeto)) {
-					
+					if(stdindata) {
+						socksome += write(sfd,stdinbuf,sizeof(stdinbuf));
+						if (socksome >= sockall) {
+							stdindata = 1;
+							sockall = 0;
+						}
+					}
 				}
 				if (FD_ISSET(1,&writeto)) {
-					
+					if(sockdata) {
+						stdinsome += write(1,sockbuf,sizeof(sockbuf));
+						if (stdinsome >= stdinall) {
+							sockdata = 1;
+							stdinall = 0;
+						}
+					}
 				}
 			}
 		}
