@@ -1,3 +1,5 @@
+### Status: Incomplete
+See [goNetShell](https://github.com/Tookmund/goNetShell) for a working version
 # Netshell
 A simple telnet-like in c
 
